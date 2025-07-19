@@ -12,7 +12,7 @@ WHERE ProductCode = '230910'
 
 AND country_name != 'World'
 GROUP BY country_name
-ORDER BY trade_value DESC
+ORDER BY total_imports DESC
 LIMIT 10;
 
 # Query #2
@@ -60,11 +60,10 @@ WHEN country_name = 'Antigua,Barb' THEN 'Antigua and Barbuda'
 WHEN country_name = 'Solomon Is' THEN 'Solomon Islands'
 WHEN country_name = 'Bahamas' THEN 'Bahamas, The'
 WHEN country_name = 'Papua N.Guin' THEN 'Papua New Guinea'
-WHEN country_name = 'Dem.Rp.Congo' THEN 'Republic of the Congo'
+WHEN country_name = 'Dem.Rp.Congo' THEN 'Democratic Republic of the Congo'
 WHEN country_name = 'Dominican Rp' THEN 'Dominican Republic'
 WHEN country_name = 'GuineaBissau' THEN 'Guinea-Bissau'
 WHEN country_name = 'Russian Fed' THEN 'Russia'
-WHEN country_name = 'Dem.Rp.Congo' THEN 'Democratic Republic of the Congo'
 WHEN country_name = 'Rep.Moldova' THEN 'Moldova'
 WHEN country_name = 'Trinidad Tbg' THEN 'Trinidad and Tobago'
 WHEN country_name = 'Lao P.Dem.R' THEN 'Laos'
@@ -73,6 +72,7 @@ WHEN country_name = 'Iran-Islam.R' THEN 'Iran'
 WHEN country_name = 'Kyrgyzstan' THEN 'Kyrgyz Republic'
 WHEN country_name = 'Venezuela' THEN 'Venezuela, RB'
 WHEN country_name = 'Yemen' THEN 'Yemen, Rep.'
+END;
 
 #to create custom table to connect US Import Data and LPI Data
 
@@ -127,8 +127,7 @@ JOIN Import_2023 im
 ON ld.Economy = im.Country
 WHERE ld.CustomsScore >= 3.4
 AND im.ProductCode = '230910'
-
-AND im.Country = 'World' IS NOT TRUE;
+AND im.Country != 'World';
 
 SELECT im.Country, im.TradeValue
 FROM LPI_2023_only ld
@@ -136,8 +135,7 @@ JOIN Import_2023 im
 ON ld.Economy = im.Country
 WHERE ld.CustomsScore < 3.4
 AND im.ProductCode = '230910'
-
-AND im.Country = 'World' IS NOT TRUE;
+AND im.Country != 'World';
 
 # Query #4
 
