@@ -5,7 +5,7 @@ import base64
 # Load your RAIV data
 @st.cache_data
 def load_data():
-return pd.read_csv("adjusted_RM_raiv_no_china.csv")
+    return pd.read_csv("adjusted_RM_raiv_no_china.csv")
 
 
 raiv_df = load_data()
