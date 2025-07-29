@@ -55,7 +55,7 @@ filtered_df["CompositeScore"] = (
 )
 
 # Top N Recommendations
-st.subheader(f"📊 Top Country Recommendations for {selected_year}")
+st.subheader(f" Top Country Recommendations for {selected_year}")
 top_n = st.slider("How many results to show?", 5, 25, 10)
 top_df = filtered_df.sort_values(by="CompositeScore", ascending=False).head(top_n)
 st.dataframe(top_df.reset_index(drop=True), use_container_width=True)
