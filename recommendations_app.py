@@ -30,6 +30,11 @@ with st.sidebar:
     timeliness_weight = st.slider("Timeliness Weight", 0.0, 1.0, 0.3)
     risk_weight = st.slider("Risk Premium Weight", 0.0, 1.0, 0.3)
     
+    # HS Code Filter (always available)
+    st.header("��️ Filter by HS Code")
+    available_hs_codes = sorted(raiv_df['HS_Code'].unique())
+    selected_hs_codes = st.multiselect("Select HS Codes", available_hs_codes, default=available_hs_codes)
+    
     # Analysis Mode
     st.header("📊 Analysis Mode")
     analysis_mode = st.radio("Select Analysis Mode", 
@@ -37,18 +42,13 @@ with st.sidebar:
     
     if analysis_mode == "By Year":
         # Year Filter
-        st.header("Filter by Year")
+        st.header("📅 Filter by Year")
         available_years = sorted(raiv_df['Year'].unique())
         selected_year = st.selectbox("Select Year", available_years, index=len(available_years)-1)
-        
-        # HS Code Filter
-        st.header("Filter by HS Code")
-        available_hs_codes = sorted(raiv_df['HS_Code'].unique())
-        selected_hs_codes = st.multiselect("Select HS Codes", available_hs_codes, default=available_hs_codes)
     
     else:  # Aggregated mode
         st.header("📈 Aggregation Settings")
-        st.info("This mode will aggregate all years and HS codes by PartnerName")
+        st.info("This mode will aggregate all years by PartnerName")
 
 # Normalize weights
 total = raiv_weight + timeliness_weight + risk_weight
@@ -59,29 +59,36 @@ raiv_weight /= total
 timeliness_weight /= total
 risk_weight /= total
 
+# First, filter by HS codes (applies to both modes)
+filtered_df = raiv_df[raiv_df['HS_Code'].isin(selected_hs_codes)].copy()
+
 # Process data based on analysis mode
 if analysis_mode == "By Year":
-    # Filter by year and HS codes
-    filtered_df = raiv_df[
-        (raiv_df['Year'] == selected_year) & 
-        (raiv_df['HS_Code'].isin(selected_hs_codes))
-    ].copy()
+    # Filter by year
+    filtered_df = filtered_df[filtered_df['Year'] == selected_year].copy()
+    
+    # Aggregate by PartnerName for the selected year
+    aggregated_df = filtered_df.groupby('PartnerName').agg({
+        'RAIV': 'sum',
+        'TimelinessScore': 'mean',
+        'RiskScore': 'mean'
+    }).reset_index()
     
     # Composite Score Calculation
-    filtered_df["CompositeScore"] = (
-        raiv_weight * filtered_df["RAIV"] +
-        timeliness_weight * filtered_df["TimelinessScore"] +
-        risk_weight * (1 - filtered_df["RiskScore"])
+    aggregated_df["CompositeScore"] = (
+        raiv_weight * aggregated_df["RAIV"] +
+        timeliness_weight * aggregated_df["TimelinessScore"] +
+        risk_weight * (1 - aggregated_df["RiskScore"])
     )
     
     # Top N Recommendations
-    st.subheader(f"Top Country Recommendations for {selected_year}")
+    st.subheader(f"📊 Top Country Recommendations for {selected_year}")
     top_n = st.slider("How many results to show?", 5, 25, 10)
-    top_df = filtered_df.sort_values(by="CompositeScore", ascending=False).head(top_n)
+    top_df = aggregated_df.sort_values(by="CompositeScore", ascending=False).head(top_n)
     
 else:  # Aggregated mode
-    # Aggregate by PartnerName
-    aggregated_df = raiv_df.groupby('PartnerName').agg({
+    # Aggregate by PartnerName across all years
+    aggregated_df = filtered_df.groupby('PartnerName').agg({
         'RAIV': 'sum',
         'TimelinessScore': 'mean',
         'RiskScore': 'mean'
@@ -95,7 +102,7 @@ else:  # Aggregated mode
     )
     
     # Top N Recommendations
-    st.subheader("Top Country Recommendations (Aggregated)")
+    st.subheader("📊 Top Country Recommendations (Aggregated)")
     top_n = st.slider("How many results to show?", 5, 25, 10)
     top_df = aggregated_df.sort_values(by="CompositeScore", ascending=False).head(top_n)
 
