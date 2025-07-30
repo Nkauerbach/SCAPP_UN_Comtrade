@@ -26,9 +26,9 @@ Use the sliders below to customize your preferences.
 # Sidebar Inputs
 with st.sidebar:
     st.header("Adjust Weights")
-    raiv_weight = st.slider("RAIV Weight", 0.0, 1.0, 0.4)
-    timeliness_weight = st.slider("Timeliness Weight", 0.0, 1.0, 0.3)
-    risk_weight = st.slider("Risk Premium Weight", 0.0, 1.0, 0.3)
+    raiv_weight = st.slider("RAIV Weight", 0.0, 1.0, 0.1)
+    timeliness_weight = st.slider("Timeliness Weight", 0.0, 1.0, 0.45)
+    risk_weight = st.slider("Risk Premium Weight", 0.0, 1.0, 0.45)
     
     # HS Code Filter
     st.header("️ Filter by HS Code")
@@ -40,14 +40,19 @@ with st.sidebar:
     available_years = sorted(raiv_df['Year'].unique())
     selected_years = st.multiselect("Select Years", available_years, default=available_years)
 
-# Normalize weights
-total = raiv_weight + timeliness_weight + risk_weight
+# Apply multipliers for emphasis
+raiv_weight_adj = raiv_weight
+timeliness_weight_adj = timeliness_weight * 1.25
+risk_weight_adj = risk_weight * 1.25
+
+# Normalize so the sum is 1
+total = raiv_weight_adj + timeliness_weight_adj + risk_weight_adj
 if total == 0:
     st.error("Total weight must be greater than 0")
     st.stop()
-raiv_weight /= total
-timeliness_weight /= total
-risk_weight /= total
+raiv_weight_final = raiv_weight_adj / total
+timeliness_weight_final = timeliness_weight_adj / total
+risk_weight_final = risk_weight_adj / total
 
 # Filter data by selected HS codes and years
 filtered_df = raiv_df[
@@ -56,20 +61,17 @@ filtered_df = raiv_df[
 ].copy()
 
 # Aggregate by PartnerName/Economy
-# RAIV: Sum across years
-# TimelinessScore: Average across years  
-# RiskScore: Average across years
 aggregated_df = filtered_df.groupby('PartnerName').agg({
     'RAIV': 'sum',                    # Sum RAIV across years
     'TimelinessScore': 'mean',        # Average Timeliness across years
     'RiskScore': 'mean'               # Average Risk across years
 }).reset_index()
 
-# Composite Score Calculation
+# Composite Score Calculation (using normalized, adjusted weights)
 aggregated_df["CompositeScore"] = (
-    raiv_weight * aggregated_df["RAIV"] +
-    1.25 * timeliness_weight * aggregated_df["TimelinessScore"] +
-    1.25 * risk_weight * (1 - aggregated_df["RiskScore"])
+    raiv_weight_final * aggregated_df["RAIV"] +
+    timeliness_weight_final * aggregated_df["TimelinessScore"] +
+    risk_weight_final * (1 - aggregated_df["RiskScore"])
 )
 
 # Top N Recommendations
@@ -110,7 +112,11 @@ st.download_button("Download Results as CSV", csv, filename, "text/csv")
 # Footer
 st.markdown("""
 
-Explainging the Methodology: 
+**Explaining the Methodology:**  
+Weights are first adjusted to emphasize Timeliness and Risk Score, then normalized so their sum is 1.  
+- RAIV is summed across all selected years and HS codes for each country.
+- Timeliness and Risk scores are averaged across all selected years and HS codes for each country.
+- The composite score is calculated using the normalized, adjusted weights.
 
 ---
 Made with ❤️ by Nathan | [GitHub](https://github.com/yourusername)
