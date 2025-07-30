@@ -73,7 +73,7 @@ aggregated_df["CompositeScore"] = (
 
 # Top N Recommendations
 st.subheader("Top Country Recommendations")
-top_n = st.slider("How many results to show?", 5, 25, 10)
+top_n = st.slider("How many results to show?", 5, 50, 10)
 top_df = aggregated_df.sort_values(by="CompositeScore", ascending=False).head(top_n)
 
 # Display results
@@ -110,10 +110,15 @@ st.download_button("Download Results as CSV", csv, filename, "text/csv")
 st.markdown("""
 
 **Explaining the Methodology:**  
-- Each factor is normalized before weighting to ensure comparability.
-- RAIV and RiskScore are divided by their max values in the filtered set.
-- TimelinessScore is divided by 5 (the max possible score).
-- The composite score is a weighted sum of these normalized values.
+- RAIV (Raw Adjusted Import Value) is computed using the following formula: Import Value (2022-2023-2024) * LPI 2023 Score / (1 + Supply Chain Risk Premium)^"t"
+WHERE 
+- "t" = time component (t years since 2022)
+- "p" = risk premium (basic conditonal logic based on countries LPI 2023 timeliness scores gave an explicit value of either 0.05, 0.06, 0.075- lower indicates less risk)
+- "Import Value" is derived from each specific HS Code, and Year
+
+- TimelinessScore is divided by 5 (the max possible score)
+- RAIV and Risk Score are divided by the "max value" in the data set to adjust weighting disparities
+- The composite score is a weighted sum of these normalized values
 
 ---
 Made with ❤️ by Nathan | [GitHub](https://github.com/yourusername)
