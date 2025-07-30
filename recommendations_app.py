@@ -68,8 +68,8 @@ aggregated_df = filtered_df.groupby('PartnerName').agg({
 # Composite Score Calculation
 aggregated_df["CompositeScore"] = (
     raiv_weight * aggregated_df["RAIV"] +
-    timeliness_weight * aggregated_df["TimelinessScore"] +
-    risk_weight * (1 - aggregated_df["RiskScore"])
+    1.25 * timeliness_weight * aggregated_df["TimelinessScore"] +
+    1.25 * risk_weight * (1 - aggregated_df["RiskScore"])
 )
 
 # Top N Recommendations
