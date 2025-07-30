@@ -121,5 +121,13 @@ WHERE
 - The composite score is a weighted sum of these normalized values
 
 ---
+**Additional Intellegence and Future Plans**
+
+HS CODE TOC
+- 230910: Pet Food 
+- 392690: Miscelaneous plastic articles for pets such as bowls, litter boxes, etc.
+- 420100: Saddlery and harnesses such as collars, leashes, chokers 
+
+---
 Made with ❤️ by Nathan | [GitHub](https://github.com/yourusername)
 """)
