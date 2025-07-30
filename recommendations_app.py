@@ -128,6 +128,9 @@ HS CODE TOC
 - 392690: Miscelaneous plastic articles for pets such as bowls, litter boxes, etc.
 - 420100: Saddlery and harnesses such as collars, leashes, chokers 
 
+Only 3 Pet Related Pet Codes have been utilized thus far, soon I will be implementing more to give users the oppurtunity for a more comprehensive analysis
+Connecting Maritime Trade Data from UNCTAD as an additional layer (factor) of the reccomendation tool
+Integration of Trade Data (RAIV modeling) into Energy System Optimization using NC State's open source software "TEMOA"
 ---
 Made with ❤️ by Nathan | [GitHub](https://github.com/yourusername)
 """)
