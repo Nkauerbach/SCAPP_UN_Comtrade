@@ -13,7 +13,7 @@ raiv_df = load_data()
 st.set_page_config(page_title="Top Import Recommendations", layout="centered")
 
 # Header
-st.title("Big Velma top Import Recommendations Tool")
+st.title("Top Import Recommendations Tool")
 st.markdown("""
 This lightweight app helps you explore optimal import sourcing countries based on:
 - **RAIV** (Risk-Adjusted Import Value)
