@@ -32,7 +32,7 @@ with st.sidebar:
     
     # HS Code Filter
     st.header("️ Filter by HS Code")
-    available_hs_codes = sorted(raiv_df['HS_Code'].unique())
+    available_hs_codes = sorted(raiv_df['HS Code'].unique())
     selected_hs_codes = st.multiselect("Select HS Codes", available_hs_codes, default=available_hs_codes)
     
     # Year Filter
