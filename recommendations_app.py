@@ -51,7 +51,7 @@ risk_weight /= total
 
 # Filter data by selected HS codes and years
 filtered_df = raiv_df[
-    (raiv_df['HS_Code'].isin(selected_hs_codes)) & 
+    (raiv_df['HS Code'].isin(selected_hs_codes)) & 
     (raiv_df['Year'].isin(selected_years))
 ].copy()
 
