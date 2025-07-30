@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import base64
 
 # Load your RAIV data
 @st.cache_data
@@ -40,19 +39,14 @@ with st.sidebar:
     available_years = sorted(raiv_df['Year'].unique())
     selected_years = st.multiselect("Select Years", available_years, default=available_years)
 
-# Apply multipliers for emphasis
-raiv_weight_adj = raiv_weight
-timeliness_weight_adj = timeliness_weight * 1.25
-risk_weight_adj = risk_weight * 1.25
-
-# Normalize so the sum is 1
-total = raiv_weight_adj + timeliness_weight_adj + risk_weight_adj
+# Normalize weights
+total = raiv_weight + timeliness_weight + risk_weight
 if total == 0:
     st.error("Total weight must be greater than 0")
     st.stop()
-raiv_weight_final = raiv_weight_adj / total
-timeliness_weight_final = timeliness_weight_adj / total
-risk_weight_final = risk_weight_adj / total
+raiv_weight /= total
+timeliness_weight /= total
+risk_weight /= total
 
 # Filter data by selected HS codes and years
 filtered_df = raiv_df[
@@ -67,11 +61,14 @@ aggregated_df = filtered_df.groupby('PartnerName').agg({
     'RiskScore': 'mean'               # Average Risk across years
 }).reset_index()
 
-# Composite Score Calculation (using normalized, adjusted weights)
+# Normalization for composite score
+max_raiv = aggregated_df['RAIV'].max() if not aggregated_df['RAIV'].isnull().all() else 1
+max_risk = aggregated_df['RiskScore'].max() if not aggregated_df['RiskScore'].isnull().all() else 1
+
 aggregated_df["CompositeScore"] = (
-    raiv_weight_final * aggregated_df["RAIV"] +
-    timeliness_weight_final * aggregated_df["TimelinessScore"] +
-    risk_weight_final * (1 - aggregated_df["RiskScore"])
+    (aggregated_df["RAIV"] / max_raiv) * raiv_weight +
+    (aggregated_df["TimelinessScore"] / 5) * timeliness_weight +
+    (1 - (aggregated_df["RiskScore"] / max_risk)) * risk_weight
 )
 
 # Top N Recommendations
@@ -113,10 +110,10 @@ st.download_button("Download Results as CSV", csv, filename, "text/csv")
 st.markdown("""
 
 **Explaining the Methodology:**  
-Weights are first adjusted to emphasize Timeliness and Risk Score, then normalized so their sum is 1.  
-- RAIV is summed across all selected years and HS codes for each country.
-- Timeliness and Risk scores are averaged across all selected years and HS codes for each country.
-- The composite score is calculated using the normalized, adjusted weights.
+- Each factor is normalized before weighting to ensure comparability.
+- RAIV and RiskScore are divided by their max values in the filtered set.
+- TimelinessScore is divided by 5 (the max possible score).
+- The composite score is a weighted sum of these normalized values.
 
 ---
 Made with ❤️ by Nathan | [GitHub](https://github.com/yourusername)
