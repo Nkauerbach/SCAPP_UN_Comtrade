@@ -1,6 +1,1 @@
-mkdir src docs
-git mv *.js data/
-git mv *.md main code files/
-git add .
-git commit -m "organize files"
-git push
+mkdir src docs tests config
