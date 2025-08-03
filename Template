@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Simple script to scaffold a clean project structure
+
+mkdir -p src
+mkdir -p visualization
+mkdir -p data
+mkdir -p reports
+
+touch README.md
+touch .gitignore
+
+echo "Project structure created:"
+tree -d -L 2 || ls -R
