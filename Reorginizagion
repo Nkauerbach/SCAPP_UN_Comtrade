@@ -1,0 +1,6 @@
+mkdir src docs
+git mv *.js src/
+git mv *.md docs/
+git add .
+git commit -m "organize files"
+git push
