@@ -1,0 +1,158 @@
+# UN Comtrade SQL Script
+
+# Query #1
+
+- Generate Top list of trade partner countries in descending order based on total import trade value:
+
+SELECT country_name AS country, SUM(trade_value) AS total_imports
+FROM US_Imports_2024
+WHERE ProductCode = '230910'
+
+ #e.g ‘Pet Food’  with each line of products having a specific h.s code
+
+AND country_name != 'World'
+GROUP BY country_name
+ORDER BY total_imports DESC
+LIMIT 10;
+
+# Query #2
+
+- To join LPI Data and Import Data for regression with the subcategory “Customs Score”, To analyze whether or not certain high import amounts within HS code groupings correlate to lower customs scores, preparing for an excel transfer to run my regression model:
+
+#to check on country names within the US_Imports_2024 table that do not match my LPI dataframe
+
+SELECT DISTINCT Economy
+FROM LPI_Data
+LEFT JOIN US_Imports_2023 imp
+ON Economy = imp.country_name
+WHERE imp.country_name IS NULL
+
+#using this list of mismatched names, I will create a new table to be JOINED to the LPI dataset to enable accurate regression information 
+
+CREATE TABLE country_lookup (imports_country TEXT, lpi_economy TEXT);
+
+INSERT INTO country_lookup VALUES ('Switz.Liecht', 'Switzerland');
+
+#to join new lookup table
+
+SELECT imp.country_name AS imports_country, lpi.economy AS lpi_country, imp.trade_value, imp.ProductCode, imp.Year
+FROM US_Imports_2023 imp
+JOIN country_lookup cl
+ON imp.country_name = cl.imports_country
+JOIN LPI_Data lpi
+ON cl.lpi_economy = lpi.economy;
+
+#or manual name changing for 2023 Import Data
+
+UPDATE US_Imports_2023
+SET country_name = CASE
+WHEN country_name = 'France+Monac' THEN 'France'
+WHEN country_name = 'Switz.Leicht' THEN 'Switzerland'
+WHEN country_name = 'Korea Rep.' THEN 'South Korea'
+WHEN country_name = 'Norway,Sb,JM' THEN 'Norway'
+WHEN country_name = 'Ireland' THEN 'Republic of Ireland'
+WHEN country_name = 'Luxemberg' THEN 'Luxembourg'
+WHEN country_name = 'Czech Rep' THEN 'Czech Republic'
+WHEN country_name = 'Viet Nam' THEN 'Vietnam'
+WHEN country_name = 'TFYR Macedna' THEN 'North Macedonia'
+WHEN country_name = 'Bosnia Herzg' THEN 'Bosnia and Herzegovina'
+WHEN country_name = 'Antigua,Barb' THEN 'Antigua and Barbuda'
+WHEN country_name = 'Solomon Is' THEN 'Solomon Islands'
+WHEN country_name = 'Bahamas' THEN 'Bahamas, The'
+WHEN country_name = 'Papua N.Guin' THEN 'Papua New Guinea'
+WHEN country_name = 'Dem.Rp.Congo' THEN 'Democratic Republic of the Congo'
+WHEN country_name = 'Dominican Rp' THEN 'Dominican Republic'
+WHEN country_name = 'GuineaBissau' THEN 'Guinea-Bissau'
+WHEN country_name = 'Russian Fed' THEN 'Russia'
+WHEN country_name = 'Rep.Moldova' THEN 'Moldova'
+WHEN country_name = 'Trinidad Tbg' THEN 'Trinidad and Tobago'
+WHEN country_name = 'Lao P.Dem.R' THEN 'Laos'
+WHEN country_name = 'Gambia' THEN 'The Gambia'
+WHEN country_name = 'Iran-Islam.R' THEN 'Iran'
+WHEN country_name = 'Kyrgyzstan' THEN 'Kyrgyz Republic'
+WHEN country_name = 'Venezuela' THEN 'Venezuela, RB'
+WHEN country_name = 'Yemen' THEN 'Yemen, Rep.'
+END;
+
+#to create custom table to connect US Import Data and LPI Data
+
+CREATE TABLE Imports_LPI_Joined AS
+SELECT
+u.country_name,
+u.trade_value,
+
+l.AverageCustomsScore
+FROM US_Imports_2023 u
+JOIN LPI_Data l
+ON u.country_name = l.Economy;
+
+#agreggating data per country 
+
+SELECT
+country_name,
+SUM(trade_value) AS total_imports,
+AVG(AverageCustomsScore) AS avg_customs
+FROM Imports_LPI_Joined
+GROUP BY country_name;
+
+# Query #3
+
+- Running a hypothesis test with 2023 subcategory information, linking LPI 2023 specific data, running a quintile split on the customs score column, preparing for a t-test in Excel:
+
+#to create cleaned table with customs data excluding 0s, eventually the remaining columns can also be cleaned when used for further analysis 
+
+CREATE TEMP TABLE Cleaned_LPI AS
+SELECT *
+FROM LPI_2023_Custom
+WHERE customs_2023 IS NOT NULL AND customs_2023 > 0;
+
+#to calculate threshold for my hypothesis/ t-test
+
+SELECT Customs
+FROM LPI_2023_only
+ORDER BY Customs
+LIMIT 1 OFFSET ((SELECT COUNT(*) FROM LPI_2023_only) * 4 / 5 );
+
+SELECT *
+
+FROM LPI_2023_only
+
+WHERE CustomsScore ≥ 3.4
+
+#to pull export volumes of “pet food”, HS Code 230910 for each subgroup
+
+SELECT im.Country, im.TradeValue
+FROM LPI_2023_only ld
+JOIN Import_2023 im
+ON ld.Economy = im.Country
+WHERE ld.CustomsScore >= 3.4
+AND im.ProductCode = '230910'
+AND im.Country != 'World';
+
+SELECT im.Country, im.TradeValue
+FROM LPI_2023_only ld
+JOIN Import_2023 im
+ON ld.Economy = im.Country
+WHERE ld.CustomsScore < 3.4
+AND im.ProductCode = '230910'
+AND im.Country != 'World';
+
+# Query #4
+
+- Quick ranking system to determine High Infrastructure scored countries and Low Infrastructure scored countries in 2023 to be utilized in a t-test. This hypothesis test will attempt to find whether or not there is statistical significance between such high scoring countries and the total net weight of exported goods to the United States.
+
+CREATE TEMP TABLE InfrastructureTradeSet AS
+SELECT
+p.Economy,
+p.NetWeight,
+t.InfrastructureScore,
+t.InfrastructureGroup
+FROM PlasticPetMatress p
+JOIN LPI_Tagged t ON p.Economy = t.Economy
+WHERE p.Economy != 'World';
+
+SELECT
+InfrastructureGroup, COUNT(*) AS NumCountries, AVG(NetWeight) AS AvgNetWeight,
+STDDEV(NetWeight) AS StdDevNetWeight
+FROM InfrastructureTradeSet
+GROUP BY InfrastructureGroup;
